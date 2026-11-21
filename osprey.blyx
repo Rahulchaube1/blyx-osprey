@@ -1,0 +1,41 @@
+use boxoverlap;
+use boxclip;
+
+fn osprey_finite(values: vector) -> bool {
+    let mut i = 0;
+    while i < len(values) {
+        let value = at(values, i);
+        if !(value - value == 0.0) {
+            return false;
+        }
+        i += 1;
+    }
+    true
+}
+
+fn osprey_compute(pred: vector, truth: vector, width: f64, height: f64, threshold: f64) -> vector {
+    let pbox = boxclip_inside(pred, width, height);
+    let tbox = boxclip_inside(truth, width, height);
+    let scores = boxoverlap_measure(pbox, tbox);
+    if len(scores) == 0 {
+        return [];
+    }
+    let mut matched = 0;
+    if at(scores, 0) > 0.0 && at(scores, 2) >= threshold {
+        matched = 1;
+    }
+    [at(scores, 2), matched, at(scores, 0)]
+}
+
+// Score a detection against a reference after clipping both to the camera frame.
+// Returns [visible IoU, matched, visible intersection area]. Match requires positive overlap and a score at least equal to the threshold.
+pub fn osprey_compare(pred: vector, truth: vector, width: f64, height: f64, threshold: f64) -> vector {
+    if !osprey_finite(pred) { return []; }
+    if !osprey_finite(truth) { return []; }
+    if !(width > 0.0 && width - width == 0.0) { return []; }
+    if !(height > 0.0 && height - height == 0.0) { return []; }
+    if !(threshold >= 0.0 && threshold <= 1.0) { return []; }
+    let result = osprey_compute(pred, truth, width, height, threshold);
+    if !osprey_finite(result) { return []; }
+    result
+}
